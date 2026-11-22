@@ -312,6 +312,25 @@ body.dragging,body.dragging *{user-select:none!important;-webkit-user-select:non
 .chal{font-family:'Fredoka','Arial Rounded MT Bold','Trebuchet MS',sans-serif;font-size:2.4rem;font-weight:600;line-height:1.2;min-height:4rem}
 .forbid{display:inline-flex;align-items:center;gap:1rem;font:700 3.4rem 'Fredoka','Arial Rounded MT Bold','Trebuchet MS',sans-serif;color:#c92a2a;background:#fff5f5;border:5px solid #fa5252;border-radius:1.4rem;padding:.4rem 1.4rem;transform:rotate(-2deg)}
 
+/* silence overlay */
+.shush{background:#845ef7;color:#fff;border-radius:2rem;padding:.5rem 1.1rem;font-weight:800;font-size:1rem;box-shadow:0 .25rem 0 #5f3dc4;transition:transform .15s;white-space:nowrap}
+.shush:hover{transform:translateY(-2px) scale(1.05)}
+.shov{position:fixed;inset:0;z-index:85;display:none;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 40%,#9775fa,#5f3dc4 70%);color:#fff;padding:2rem}
+.shov.on{display:flex;animation:pop .35s}
+.shov .wrap{display:grid;grid-template-columns:auto 1fr;gap:3rem;align-items:center;max-width:110rem;width:100%}
+.shov .simg{width:26rem;max-width:38vw;filter:drop-shadow(0 .8rem 0 rgba(0,0,0,.2));animation:float 3s ease-in-out infinite}
+.shov .big{font-family:'Fredoka','Arial Rounded MT Bold','Trebuchet MS',sans-serif;font-weight:700;font-size:4.2rem;line-height:1.1;text-shadow:0 .3rem 0 rgba(0,0,0,.2)}
+.shov .lines{display:flex;flex-direction:column;gap:.6rem;margin:1rem 0 1.4rem}
+.shov .ln{display:flex;align-items:center;gap:.7rem;font-family:'Fredoka','Arial Rounded MT Bold','Trebuchet MS',sans-serif;font-weight:600;font-size:2.2rem;background:rgba(255,255,255,.14);border-radius:1.2rem;padding:.4rem 1rem}
+.shov .ln .say{background:#fff}
+.shov .ln.cls{background:rgba(31,42,68,.35);font-size:1.8rem}
+.shov .row{display:flex;align-items:center;gap:1.4rem;flex-wrap:wrap}
+.shov .cd{background:#fff;color:#5f3dc4;width:11rem;height:11rem;font-size:6rem}
+.shov .cd.done{background:#51cf66;color:#fff}
+.shov .x{position:absolute;top:1.2rem;right:1.4rem;width:3.4rem;height:3.4rem;border-radius:50%;background:#fff;color:#5f3dc4;font-size:1.8rem;font-weight:800}
+.shov .pill{background:#fff;color:#5f3dc4;font-size:1.2rem;padding:.6rem 1.3rem}
+@media (max-width:900px){.shov .wrap{grid-template-columns:1fr;text-align:center}.shov .simg{margin:0 auto;max-width:60vw}.shov .row{justify-content:center}}
+
 /* modal */
 .modal{position:fixed;inset:0;background:rgba(31,42,68,.55);display:none;align-items:center;justify-content:center;z-index:50;padding:1rem}
 .modal.on{display:flex}
@@ -374,6 +393,7 @@ body.dragging,body.dragging *{user-select:none!important;-webkit-user-select:non
   <div class="levels" id="levels"></div>
   <div class="spacer"></div>
   <div class="chip clockchip" id="chipClock">⏰ --:--</div>
+  <button class="shush" data-act="shush" title="Silence ! (touche S)">🤫 Silence</button>
   <button class="tbtn" id="frBtn" data-act="fr" title="Traductions en français">🇫🇷</button>
   <button class="tbtn" data-act="settings" title="Réglages (classes, mot de passe)">⚙️</button>
   <button class="tbtn" data-act="fullscreen" title="Plein écran (F)">⛶</button>
@@ -381,6 +401,7 @@ body.dragging,body.dragging *{user-select:none!important;-webkit-user-select:non
 
 <main id="app"></main>
 
+<div class="shov" id="shov"></div>
 <div class="modal" id="modal"><div class="mbox" id="mbox"></div></div>
 
 <script type="application/json" id="data">
@@ -715,7 +736,7 @@ function renderHome(){
     h += '<span class="n">' + (i+1) + '</span>' + (IMG["ph_"+p.id] ? '<img class="pimg" style="animation-delay:' + (i*0.25) + 's" src="' + IMG["ph_"+p.id] + '" alt="" draggable="false">' : '<div class="blob">' + p.icon + '</div>') + '';
     h += '<h3>' + esc(p.title) + '</h3><p>' + esc(p.fr) + '</p></button>';
   }
-  h += '</div><p class="hint">Click a picture to start · <kbd>→</kbd> next · <kbd>←</kbd> back · <kbd>Space</kbd> check the answer · <kbd>F</kbd> full screen · <kbd>H</kbd> home</p></section>';
+  h += '</div><p class="hint">Click a picture to start · <kbd>→</kbd> next · <kbd>←</kbd> back · <kbd>Space</kbd> check the answer · <kbd>F</kbd> full screen · <kbd>H</kbd> home · <kbd>S</kbd> silence!</p></section>';
   $("app").innerHTML = h;
 }
 function logoSVG(){
@@ -784,8 +805,26 @@ function wSettle(){
 }
 var cdTimer = null;
 function wSilence(){
-  return '<h3>⏳ SILENCE COUNTDOWN</h3><div class="countdown"><div class="cd" id="cd">5</div><div><div class="big-ans" id="cdText">5, 4, 3, 2, 1… Silence!</div><div style="margin-top:.7rem"><button class="pill" data-act="countdown">▶ Start the countdown</button></div></div></div>';
+  return '<h3>⏳ SILENCE COUNTDOWN</h3><div class="countdown"><div class="cd">5</div><div><div class="big-ans">5, 4, 3, 2, 1… Silence!</div><div style="margin-top:.7rem;display:flex;gap:.6rem;flex-wrap:wrap;align-items:center"><button class="pill" data-act="shush">▶ Start the countdown</button><span style="font-weight:800;color:var(--muted)">Tip: the <b style="color:#845ef7">🤫 Silence</b> button at the top works on every screen (key <kbd>S</kbd>)!</span></div></div></div>';
 }
+var shTimer = null;
+function openShush(){
+  var ph = null, i; for(i=0;i<PH.length;i++) if(PH[i].id === "silence") ph = PH[i];
+  var asks = ph.ask[L()], ans = ph.ans[L()], h = '<button class="x" data-act="shushClose" title="Close (Esc)">✕</button><div class="wrap">';
+  h += pic("ph_silence","simg","🤫");
+  h += '<div><div class="big">🤫 Silence, please!</div><div class="lines">';
+  for(i=0;i<asks.length;i++) h += '<div class="ln">' + tagMM() + '<span style="flex:1">' + esc(asks[i][0]) + '</span><button class="say" data-act="say" data-t="' + esc(asks[i][0]) + '">🔊</button></div>';
+  for(i=0;i<ans.length;i++) h += '<div class="ln cls">' + tagCL() + '<span style="flex:1">' + esc(ans[i][0]) + '</span></div>';
+  h += '</div><div class="row"><div class="cd" id="shCd">5</div><button class="pill" data-act="shushRestart">↺ Again</button><button class="pill" data-act="shushClose">✓ Back to the lesson</button></div></div></div>';
+  $("shov").innerHTML = h; $("shov").className = "shov on";
+  startShushCount();
+}
+function startShushCount(){
+  clearInterval(shTimer); var n = 5, cd = $("shCd"); if(!cd) return; cd.className = "cd go"; cd.textContent = n;
+  shTimer = setInterval(function(){ n--; var e = $("shCd"); if(!e){ clearInterval(shTimer); return; }
+    if(n > 0) e.textContent = n; else { clearInterval(shTimer); e.textContent = "🤫"; e.className = "cd done"; } }, 1000);
+}
+function closeShush(){ clearInterval(shTimer); $("shov").className = "shov"; $("shov").innerHTML = ""; }
 function wFeelings(){
   var list = DATA.feelings[L()], h = '', i, r = roster();
   var q = {"6":"How are you, ","5":"How are you today, ","4":"How are you feeling today, ","3":"What's new, "}[L()];
@@ -1113,7 +1152,7 @@ document.addEventListener("click", function(ev){
   if(suppressClick){ suppressClick = false; return; }
   var el = ev.target; while(el && el !== document && !el.getAttribute("data-act")) el = el.parentNode;
   if(!el || el === document) { if(ev.target === $("modal")) closeModal(); return; }
-  var act = el.getAttribute("data-act"), v = el.getAttribute("data-v"), c;
+  var act = el.getAttribute("data-act"), v = el.getAttribute("data-v"), c, i;
   switch(act){
     case "home": view = "home"; render(); break;
     case "go": go(parseInt(v,10)); break;
@@ -1134,14 +1173,12 @@ document.addEventListener("click", function(ev){
     case "saveSettings": readSettings(); save(); closeModal(); target = ""; render(); toast("Saved ✓"); break;
     case "spin": spinMini(); break;
     case "miniDone": c = classObj(); if(c && S.mini && c.done.indexOf(S.mini) < 0){ c.done.push(S.mini); } toast("⭐ " + S.mini + " was a great Mini Me!"); S.mini = ""; save(); confetti(); render(); break;
+    case "shush": openShush(); break;
+    case "shushClose": closeShush(); break;
+    case "shushRestart": startShushCount(); break;
     case "say": speak(el.getAttribute("data-t"), el); break;
     case "reveal": if(el.className.indexOf("open") < 0){ el.className += " open"; if(PH[view] && PH[view].widget==="challenge") chalOpen = true; } break;
     case "check": el.className = el.className.indexOf(" on") >= 0 ? "check" : "check on"; el.querySelector(".box").textContent = el.className.indexOf(" on")>=0 ? "✓" : ""; break;
-    case "countdown":
-      clearInterval(cdTimer); var n = 5, cd = $("cd"); cd.className = "cd go"; cd.textContent = n; $("cdText").textContent = "Shhh…";
-      cdTimer = setInterval(function(){ n--; var e = $("cd"); if(!e){ clearInterval(cdTimer); return; }
-        if(n > 0){ e.textContent = n; } else { clearInterval(cdTimer); e.textContent = "🤫"; e.className = "cd"; $("cdText").textContent = "Thank you! Silence, please."; } }, 1000);
-      break;
     case "who": var r = roster(); feelSel = []; if(r.length){ var nt = target; if(r.length > 1){ while(nt === target) nt = rand(r); } else nt = r[0]; target = nt; refreshWidget(); } else openSettings(); break;
     case "feel":
       var fi = parseInt(v,10), fx = feelSel.indexOf(fi);
@@ -1213,6 +1250,8 @@ document.addEventListener("pointerup", endDrag);
 document.addEventListener("pointercancel", function(){ if(drag && drag.ghost && drag.ghost.parentNode) drag.ghost.parentNode.removeChild(drag.ghost); drag = null; });
 document.addEventListener("keydown", function(e){
   if($("modal").className.indexOf("on") >= 0){ if(e.key === "Escape") closeModal(); return; }
+  if($("shov").className.indexOf("on") >= 0){ if(e.key === "Escape" || e.key === "s" || e.key === "S") closeShush(); return; }
+  var tg0 = e.target.tagName; if((e.key === "s" || e.key === "S") && tg0 !== "INPUT" && tg0 !== "TEXTAREA"){ openShush(); return; }
   var tg = e.target.tagName; if(tg === "INPUT" || tg === "TEXTAREA" || tg === "SELECT") return;
   if(e.key === "ArrowRight"){ go(view === "home" ? 0 : view+1); }
   else if(e.key === "ArrowLeft"){ if(view === "home" || view === 0){ view = "home"; render(); } else go(view-1); }
